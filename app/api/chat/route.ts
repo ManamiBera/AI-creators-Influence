@@ -29,7 +29,8 @@ function toMessage(row: ChatRow) {
     time: new Intl.DateTimeFormat("en-IN", {
       hour: "numeric",
       minute: "2-digit",
-    }).format(new Date(row.created_at)),
+      timeZone: "Asia/Kolkata",
+      }).format(new Date(row.created_at)),
     senderEmail: row.sender_email,
     senderName: row.sender_name,
     createdAt: row.created_at,
