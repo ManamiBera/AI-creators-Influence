@@ -1,6 +1,6 @@
-# Influence AI Creator Intelligence
+# Creators Influence 
 
-Influence is a full-stack campaign collaboration workspace built with Next.js, Supabase, and Vercel. Registered users can discover one another, communicate inside the app, create shared campaigns, assign or remove team members, and track campaign progress.
+Creators Influence is a full-stack campaign collaboration workspace built with Next.js, Supabase, and Vercel. Registered users can discover one another, communicate inside the app, create shared campaigns, assign or remove team members, and track campaign progress.
 
 **Live app:** https://ai-creators-influence.vercel.app
 
