@@ -2,7 +2,6 @@
 
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { getSession, signIn, signOut } from "next-auth/react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 type View = "overview" | "discover" | "campaigns" | "inbox" | "analytics" | "profile";
 type IconName =
@@ -81,6 +80,7 @@ type ThreadMessage = {
 
 type Thread = {
   id: string;
+  email: string;
   name: string;
   initials: string;
   time: string;
@@ -93,7 +93,6 @@ type Thread = {
 const storageKeys = {
   favorites: "influence_favorites_v2",
   campaigns: "influence_campaigns_v2",
-  threads: "influence_threads_v2",
   profile: "influence_profile_v2",
 };
 
@@ -231,47 +230,7 @@ const initialCampaigns: Campaign[] = [
   { id: "weekend-elsewhere", name: "Weekend Elsewhere", brand: "StayLite", category: "Travel", objective: "Drive bookings for weekend travel packages.", progress: 100, budget: "₹2.1L", creators: 2, creatorIds: ["sana", "riya"], reach: "1.1M", color: "#ff8b72", status: "Complete" },
 ];
 
-const initialThreads: Thread[] = [
-  {
-    id: "riya",
-    name: "Riya Ray",
-    initials: "RR",
-    time: "10:10 AM",
-    text: "The concept feels very on-brand. Can we align on the reel timeline?",
-    unread: true,
-    color: "coral",
-    messages: [
-      { id: "r1", from: "brand", text: "Hi Riya, your ingredient-first content feels perfect for Luma Skin’s Monsoon Reset. We’d love to explore a 2-reel collaboration focused on honest sunscreen education.", time: "9:42 AM · Sent by Influence AI" },
-      { id: "r2", from: "creator", text: "The concept feels very on-brand. Can we align on the reel timeline?", time: "10:10 AM" },
-    ],
-  },
-  {
-    id: "naina",
-    name: "Naina Bhat",
-    initials: "NB",
-    time: "Yesterday",
-    text: "I’ve shared the revised launch-week deliverables.",
-    unread: false,
-    color: "blue",
-    messages: [
-      { id: "n1", from: "brand", text: "Hi Naina, we would love your honest take on our new creator workflow.", time: "Yesterday · 11:30 AM" },
-      { id: "n2", from: "creator", text: "I’ve shared the revised launch-week deliverables.", time: "Yesterday · 4:12 PM" },
-    ],
-  },
-  {
-    id: "sana",
-    name: "Sana Kapoor",
-    initials: "SK",
-    time: "Mon",
-    text: "The tasting challenge idea is strong—let’s lock the dates.",
-    unread: false,
-    color: "amber",
-    messages: [
-      { id: "s1", from: "brand", text: "The brief is ready. We’re thinking of a creator-led tasting challenge.", time: "Mon · 9:20 AM" },
-      { id: "s2", from: "creator", text: "The tasting challenge idea is strong—let’s lock the dates.", time: "Mon · 12:05 PM" },
-    ],
-  },
-];
+
 
 function initialsFor(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "IA";
@@ -491,7 +450,7 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
   const chartValue = metrics.earnedMedia * rangeData.multiplier;
   const stats = [
     { label: "Active campaigns", value: String(activeCampaigns.length).padStart(2, "0"), change: `${campaigns.length} total campaigns`, icon: "megaphone" as IconName, tone: "violet" },
-    { label: "Creator pipeline", value: String(outreachCount).padStart(2, "0"), change: "Active conversations", icon: "users" as IconName, tone: "cyan" },
+    { label: "Workspace users", value: String(outreachCount + 1).padStart(2, "0",), change: "Registered accounts", icon: "users" as IconName, tone: "cyan",},
     { label: "Earned media value", value: formatLakhs(metrics.earnedMedia), change: `${Math.round(metrics.averageProgress)}% average delivery`, icon: "chart" as IconName, tone: "lime" },
     { label: "Average ROAS", value: `${metrics.roas.toFixed(1)}×`, change: `${formatLakhs(metrics.budget)} managed budget`, icon: "bolt" as IconName, tone: "coral" },
   ];
@@ -634,90 +593,372 @@ function Campaigns({ onNewCampaign, campaigns, onOpenCampaign }: { onNewCampaign
   </>;
 }
 
-function Inbox({ threads, activeThreadId, currentUser, onSend, onReceive, onMarkRead, onViewCreator }: { threads: Thread[]; activeThreadId: string | null; currentUser: UserSession; onSend: (threadId: string, text: string) => Promise<boolean>; onReceive: (threadId: string, messages: ThreadMessage[]) => void; onMarkRead: (threadId: string) => void; onViewCreator: (creatorId: string) => void }) {
-  const [activeId, setActiveId] = useState(activeThreadId ?? threads[0]?.id ?? "riya");
+function Inbox({
+  threads,
+  currentUser,
+  onSend,
+  onReceive,
+  onMarkRead,
+}: {
+  threads: Thread[];
+  currentUser: UserSession;
+  onSend: (
+    threadId: string,
+    text: string,
+  ) => Promise<boolean>;
+  onReceive: (
+    threadId: string,
+    messages: ThreadMessage[],
+  ) => void;
+  onMarkRead: (threadId: string) => void;
+}) {
+  const [activeId, setActiveId] = useState<
+    string | null
+  >(threads[0]?.id ?? null);
+
   const [draft, setDraft] = useState("");
+  const [directorySearch, setDirectorySearch] =
+    useState("");
   const [sending, setSending] = useState(false);
-  const [chatState, setChatState] = useState<"connecting" | "live" | "demo" | "error">("connecting");
-  const receiveEffectEvent = useEffectEvent(onReceive);
+
+  const [chatState, setChatState] = useState<
+    "connecting" | "live" | "error"
+  >("connecting");
+
+  const receiveEffectEvent =
+    useEffectEvent(onReceive);
+
+  const activeThread =
+    threads.find(
+      (thread) => thread.id === activeId,
+    ) ??
+    threads[0] ??
+    null;
+
+  const activeThreadId = activeThread?.id ?? "";
+  const recipientEmail = activeThread?.email ?? "";
+
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setChatState("connecting");
+    if (!activeThreadId || !recipientEmail) return;
+
+    let mounted = true;
+
+    const load = async (firstLoad = false) => {
+      if (firstLoad) {
+        setChatState("connecting");
+      }
+
       try {
-        const response = await fetch(`/api/chat?threadId=${encodeURIComponent(activeId)}`, { cache: "no-store" });
-        const payload = await response.json() as { configured?: boolean; messages?: ThreadMessage[] };
-        if (!active) return;
-        if (payload.configured === false) {
-          setChatState("demo");
-          return;
-        }
+        const response = await fetch(
+          `/api/chat?recipientEmail=${encodeURIComponent(
+            recipientEmail,
+          )}`,
+          { cache: "no-store" },
+        );
+
+        const payload =
+          (await response.json()) as {
+            messages?: ThreadMessage[];
+          };
+
+        if (!mounted) return;
+
         if (!response.ok) {
           setChatState("error");
           return;
         }
-        receiveEffectEvent(activeId, payload.messages ?? []);
+
+        receiveEffectEvent(
+          activeThreadId,
+          payload.messages ?? [],
+        );
+
         setChatState("live");
       } catch {
-        if (active) setChatState("error");
+        if (mounted) {
+          setChatState("error");
+        }
       }
     };
-    void load();
 
-    const supabase = getSupabaseBrowser();
-    const channel = supabase?.channel(`influence-chat-${activeId}`).on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "chat_messages", filter: `thread_id=eq.${activeId}` },
-      event => {
-        const row = event.new as { id: string; thread_id: string; sender_email: string; sender_name: string; body: string; created_at: string };
-        receiveEffectEvent(activeId, [{ id: row.id, from: "brand", text: row.body, time: new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" }).format(new Date(row.created_at)), senderEmail: row.sender_email, senderName: row.sender_name, createdAt: row.created_at }]);
-        setChatState("live");
-      },
-    ).subscribe(status => {
-      if (status === "SUBSCRIBED") setChatState("live");
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setChatState("error");
-    });
+    void load(true);
+
+    const poll = window.setInterval(
+      () => void load(false),
+      1500,
+    );
 
     return () => {
-      active = false;
-      if (channel && supabase) void supabase.removeChannel(channel);
+      mounted = false;
+      window.clearInterval(poll);
     };
-  }, [activeId]);
-  const active = threads.find(thread => thread.id === activeId) ?? threads[0];
-  if (!active) return null;
+  }, [activeThreadId, recipientEmail]);
+
   const selectThread = (threadId: string) => {
     setActiveId(threadId);
     onMarkRead(threadId);
   };
+
   const send = async () => {
-    if (!draft.trim() || sending) return;
+    if (
+      !activeThread ||
+      !draft.trim() ||
+      sending
+    ) {
+      return;
+    }
+
     setSending(true);
-    const sent = await onSend(active.id, draft.trim());
-    if (sent) setDraft("");
+
+    const sent = await onSend(
+      activeThread.id,
+      draft.trim(),
+    );
+
+    if (sent) {
+      setDraft("");
+    }
+
     setSending(false);
   };
-  const suggestedReply = "Absolutely—I'll share the final brief and proposed timeline today.";
-  return <>
-    <section className="page-heading compact-heading"><div><span className="eyebrow">Influence chat</span><h1>One workspace. Real conversations.</h1><p>Briefs, replies, and campaign decisions stay inside Influence from first message to final delivery.</p></div><span className={`workspace-saved chat-${chatState}`}><i/>{chatState === "live" ? "Live across browsers" : chatState === "connecting" ? "Connecting live chat…" : chatState === "demo" ? "Local demo mode" : "Chat connection issue"}</span></section>
-    <section className="inbox-shell panel">
-      <div className="thread-list">
-        <div className="thread-list-head"><h2>Messages</h2><span>{threads.filter(x => x.unread).length} unread</span></div>
-        {threads.map(thread => <button className={`thread-item ${active.id === thread.id ? "active" : ""}`} key={thread.id} onClick={() => selectThread(thread.id)}>
-          <Avatar creator={{ initials: thread.initials, color: thread.color }} small/>
-          <div><strong>{thread.name}{thread.unread && <i/>}</strong><span>{thread.text}</span></div><time>{thread.time}</time>
-        </button>)}
-      </div>
-      <div className="conversation">
-        <div className="conversation-head"><Avatar creator={{ initials: active.initials, color: active.color }} small/><div><strong>{active.name}</strong><span>Influence app chat · {chatState === "live" ? "Live now" : "Ready"}</span></div><button className="secondary-button" onClick={() => onViewCreator(active.id)}>View creator</button></div>
-        <div className="messages-stage">
-          <div className="date-chip">Today</div>
-          {active.messages.map(message => { const outgoing = message.senderEmail ? message.senderEmail.toLowerCase() === currentUser.email.toLowerCase() : message.from === "brand"; return <div className={`message-bubble ${outgoing ? "outgoing" : "incoming"}`} key={message.id}>{message.senderName && <b className="message-sender">{outgoing ? "You" : message.senderName}</b>}{message.text}<span>{message.time}</span></div>; })}
-          <div className="ai-prompt"><Icon name="spark" size={16}/><span>Suggested reply: confirm timeline and share the campaign brief.</span><button onClick={() => setDraft(suggestedReply)}>Use reply</button></div>
+
+  const filteredThreads = threads.filter(
+    (thread) =>
+      `${thread.name} ${thread.email}`
+        .toLowerCase()
+        .includes(directorySearch.toLowerCase()),
+  );
+
+  return (
+    <>
+      <section className="page-heading compact-heading">
+        <div>
+          <span className="eyebrow">
+            Influence chat
+          </span>
+
+          <h1>
+            One workspace. Real conversations.
+          </h1>
+
+          <p>
+            Find registered Influence users and
+            message them directly inside the app.
+          </p>
         </div>
-        <div className="message-compose"><button aria-label="Add attachment" onClick={() => setDraft(current => `${current}${current ? " " : ""}[Campaign brief attached]`)}><Icon name="plus" size={18}/></button><input aria-label="Message" value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void send(); }} placeholder={`Message ${active.name.split(" ")[0]}…`}/><button className="send-button" aria-label="Send message" disabled={sending} onClick={() => void send()}>{sending ? <span className="button-spinner"/> : <Icon name="send" size={17}/>}</button></div>
-      </div>
-    </section>
-  </>;
+
+        <span
+          className={`workspace-saved chat-${chatState}`}
+        >
+          <i />
+
+          {chatState === "live"
+            ? "Live across browsers"
+            : chatState === "connecting"
+              ? "Connecting live chat…"
+              : "Chat connection issue"}
+        </span>
+      </section>
+
+      <section className="inbox-shell panel">
+        <div className="thread-list">
+          <div className="thread-list-head">
+            <h2>People</h2>
+            <span>{threads.length} users</span>
+          </div>
+
+          <label className="user-search">
+            <Icon name="search" size={15} />
+
+            <input
+              value={directorySearch}
+              onChange={(event) =>
+                setDirectorySearch(
+                  event.target.value,
+                )
+              }
+              placeholder="Find a user…"
+            />
+          </label>
+
+          {filteredThreads.map((thread) => (
+            <button
+              className={`thread-item ${
+                activeThread?.id === thread.id
+                  ? "active"
+                  : ""
+              }`}
+              key={thread.id}
+              onClick={() =>
+                selectThread(thread.id)
+              }
+            >
+              <Avatar
+                creator={{
+                  initials: thread.initials,
+                  color: thread.color,
+                }}
+                small
+              />
+
+              <div>
+                <strong>
+                  {thread.name}
+                  {thread.unread && <i />}
+                </strong>
+
+                <span>
+                  {thread.text || thread.email}
+                </span>
+              </div>
+
+              <time>{thread.time}</time>
+            </button>
+          ))}
+
+          {!filteredThreads.length && (
+            <div className="user-directory-empty">
+              <Icon name="users" size={22} />
+              <strong>No users found</strong>
+              <span>
+                Ask them to create an account first.
+              </span>
+            </div>
+          )}
+        </div>
+
+        {activeThread ? (
+          <div className="conversation">
+            <div className="conversation-head">
+              <Avatar
+                creator={{
+                  initials: activeThread.initials,
+                  color: activeThread.color,
+                }}
+                small
+              />
+
+              <div>
+                <strong>{activeThread.name}</strong>
+
+                <span>
+                  {activeThread.email} ·{" "}
+                  {chatState === "live"
+                    ? "Live now"
+                    : "Connecting"}
+                </span>
+              </div>
+            </div>
+
+            <div className="messages-stage">
+              <div className="date-chip">
+                Today
+              </div>
+
+              {activeThread.messages.map(
+                (message) => {
+                  const outgoing =
+                    message.senderEmail
+                      ? message.senderEmail.toLowerCase() ===
+                        currentUser.email.toLowerCase()
+                      : message.from === "brand";
+
+                  return (
+                    <div
+                      className={`message-bubble ${
+                        outgoing
+                          ? "outgoing"
+                          : "incoming"
+                      }`}
+                      key={message.id}
+                    >
+                      {message.senderName && (
+                        <b className="message-sender">
+                          {outgoing
+                            ? "You"
+                            : message.senderName}
+                        </b>
+                      )}
+
+                      {message.text}
+
+                      <span>{message.time}</span>
+                    </div>
+                  );
+                },
+              )}
+
+              {!activeThread.messages.length && (
+                <div className="conversation-empty">
+                  <Icon
+                    name="message"
+                    size={24}
+                  />
+
+                  <strong>
+                    Start a conversation
+                  </strong>
+
+                  <span>
+                    Your messages with{" "}
+                    {activeThread.name} will appear
+                    here on both devices.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="message-compose">
+              <input
+                aria-label="Message"
+                value={draft}
+                onChange={(event) =>
+                  setDraft(event.target.value)
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    void send();
+                  }
+                }}
+                placeholder={`Message ${
+                  activeThread.name.split(" ")[0]
+                }…`}
+              />
+
+              <button
+                className="send-button"
+                aria-label="Send message"
+                disabled={sending}
+                onClick={() => void send()}
+              >
+                {sending ? (
+                  <span className="button-spinner" />
+                ) : (
+                  <Icon
+                    name="send"
+                    size={17}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="conversation no-user-selected">
+            <Icon name="users" size={30} />
+
+            <strong>
+              No other registered users yet
+            </strong>
+
+            <span>
+              Create another account, then refresh
+              this page.
+            </span>
+          </div>
+        )}
+      </section>
+    </>
+  );
 }
 
 function Analytics({ campaigns }: { campaigns: Campaign[] }) {
@@ -795,7 +1036,7 @@ function ProfilePage({ session, campaigns, threads, favorites, onSave, onSignOut
       </article>
       <article className="panel profile-stats">
         <div><span>Active campaigns</span><strong>{activeCampaigns}</strong><small>{campaigns.length} total</small></div>
-        <div><span>Creator chats</span><strong>{threads.length}</strong><small>{threads.filter(thread => thread.unread).length} unread</small></div>
+        <div><span>App contacts</span><strong>{threads.length}</strong><small>{threads.filter(thread => thread.unread).length} unread</small></div>
         <div><span>Saved creators</span><strong>{favorites.length}</strong><small>personal shortlist</small></div>
       </article>
       <article className="panel profile-settings">
@@ -933,8 +1174,8 @@ export default function InfluenceApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<string | null>(null);
-  const [threads, setThreads] = useState<Thread[]>(initialThreads);
-  const [chatTarget, setChatTarget] = useState<string | null>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
+
 
   useEffect(() => {
     let active = true;
@@ -949,10 +1190,10 @@ export default function InfluenceApp() {
           };
           const storedFavorites = localStorage.getItem(userStorageKey(storageKeys.favorites, email));
           const storedCampaigns = localStorage.getItem(userStorageKey(storageKeys.campaigns, email));
-          const storedThreads = localStorage.getItem(userStorageKey(storageKeys.threads, email));
+          
           if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
           if (storedCampaigns) setCampaigns(normalizeCampaigns(JSON.parse(storedCampaigns)));
-          if (storedThreads) setThreads(JSON.parse(storedThreads));
+          
           if (active) setSession(user);
         }
       } catch {
@@ -970,7 +1211,69 @@ export default function InfluenceApp() {
 
   useEffect(() => { if (storageReady && session) localStorage.setItem(userStorageKey(storageKeys.favorites, session.email), JSON.stringify(favorites)); }, [favorites, session, storageReady]);
   useEffect(() => { if (storageReady && session) localStorage.setItem(userStorageKey(storageKeys.campaigns, session.email), JSON.stringify(campaigns)); }, [campaigns, session, storageReady]);
-  useEffect(() => { if (storageReady && session) localStorage.setItem(userStorageKey(storageKeys.threads, session.email), JSON.stringify(threads)); }, [threads, session, storageReady]);
+  useEffect(() => {
+  if (
+    !session ||
+    session.email === "demo@influence.ai"
+  ) {
+    return;
+  }
+
+  let mounted = true;
+
+  const loadUsers = async () => {
+    try {
+      const response = await fetch("/api/users", {
+        cache: "no-store",
+      });
+
+      const payload =
+        (await response.json()) as {
+          users?: Array<{
+            id: string;
+            name: string;
+            email: string;
+            initials: string;
+            color: string;
+          }>;
+        };
+
+      if (!mounted || !response.ok) {
+        return;
+      }
+
+      setThreads((current) =>
+        (payload.users ?? []).map((user) => {
+          const existing = current.find(
+            (thread) => thread.id === user.id,
+          );
+
+          return {
+            ...user,
+            time: existing?.time ?? "",
+            text: existing?.text ?? "",
+            unread: existing?.unread ?? false,
+            messages: existing?.messages ?? [],
+          };
+        }),
+      );
+    } catch {
+      // The directory retries automatically.
+    }
+  };
+
+  void loadUsers();
+
+  const poll = window.setInterval(
+    () => void loadUsers(),
+    10000,
+  );
+
+  return () => {
+    mounted = false;
+    window.clearInterval(poll);
+  };
+}, [session]);
 
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
@@ -988,19 +1291,14 @@ export default function InfluenceApp() {
   const toggleFavorite = (id: string) => setFavorites(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
   const navigate = (next: View) => { setView(next); setSearch(""); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const sendToOutreach = (creator: Creator) => {
-    const draft = `Hi ${creator.name.split(" ")[0]}, your ${creator.niche.toLowerCase()} storytelling and strong audience trust make you a standout fit for Luma Skin’s Monsoon Reset. We’d love to collaborate on a creator-led launch.`;
-    setThreads(current => {
-      const existing = current.find(thread => thread.id === creator.id);
-      if (existing) return current.map(thread => thread.id === creator.id ? { ...thread, text: draft, time: "Just now", unread: false, messages: [...thread.messages, { id: crypto.randomUUID(), from: "brand", text: draft, time: "Just now · Sent by Influence AI" }] } : thread);
-      return [{ id: creator.id, name: creator.name, initials: creator.initials, time: "Just now", text: draft, unread: false, color: creator.color, messages: [{ id: crypto.randomUUID(), from: "brand", text: draft, time: "Just now · Sent by Influence AI" }] }, ...current];
-    });
-    setChatTarget(creator.id);
-    markRead(creator.id);
-    setSelectedCreator(null);
-    setSelectedCampaign(null);
-    navigate("inbox");
-    notify(`In-app chat with ${creator.name} is open.`);
-  };
+  setSelectedCreator(null);
+  setSelectedCampaign(null);
+  navigate("inbox");
+
+  notify(
+    `${creator.name} must create an Influence account before you can message them.`,
+  );
+};
   const receiveMessages = (threadId: string, incoming: ThreadMessage[]) => {
     if (!incoming.length) return;
     setThreads(current => current.map(thread => {
@@ -1012,26 +1310,59 @@ export default function InfluenceApp() {
       return { ...thread, text: last.text, time: last.time, unread: Boolean(last.senderEmail && last.senderEmail.toLowerCase() !== session?.email.toLowerCase()), messages: [...thread.messages, ...fresh] };
     }));
   };
-  const sendMessage = async (threadId: string, text: string) => {
-    try {
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ threadId, text }) });
-      const payload = await response.json() as { configured?: boolean; message?: ThreadMessage; error?: string };
-      if (response.ok && payload.message) {
-        receiveMessages(threadId, [payload.message]);
-        return true;
-      }
-      if (payload.configured === false) {
-        receiveMessages(threadId, [{ id: crypto.randomUUID(), from: "brand", text, time: "Just now · Local demo", senderEmail: session?.email, senderName: session?.name }]);
-        notify("Message saved locally. Add Supabase keys for cross-browser delivery.");
-        return true;
-      }
-      notify(payload.error ?? "Message could not be sent.");
-      return false;
-    } catch {
-      notify("Chat is temporarily unreachable. Try again.");
-      return false;
+  const sendMessage = async (
+  threadId: string,
+  text: string,
+) => {
+  const recipient = threads.find(
+    (thread) => thread.id === threadId,
+  );
+
+  if (!recipient) {
+    notify("Choose a registered user first.");
+    return false;
+  }
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recipientEmail: recipient.email,
+        text,
+      }),
+    });
+
+    const payload =
+      (await response.json()) as {
+        message?: ThreadMessage;
+        error?: string;
+      };
+
+    if (response.ok && payload.message) {
+      receiveMessages(threadId, [
+        payload.message,
+      ]);
+
+      return true;
     }
-  };
+
+    notify(
+      payload.error ??
+        "Message could not be sent.",
+    );
+
+    return false;
+  } catch {
+    notify(
+      "Chat is temporarily unreachable. Try again.",
+    );
+
+    return false;
+  }
+};
   const markRead = (threadId: string) => setThreads(current => current.map(thread => thread.id === threadId ? { ...thread, unread: false } : thread));
   const completeMatch = (campaign: Campaign) => {
     setCampaigns(current => [campaign, ...current.filter(item => item.id !== campaign.id)]);
@@ -1066,7 +1397,7 @@ export default function InfluenceApp() {
     setSession(null);
     setFavorites(["riya", "prisha"]);
     setCampaigns(initialCampaigns);
-    setThreads(initialThreads);
+    setThreads([]);
     setView("overview");
   };
   const currentLabel = view === "profile" ? "Profile" : navItems.find(item => item.id === view)?.label ?? "Overview";
@@ -1086,12 +1417,12 @@ export default function InfluenceApp() {
     </aside>
 
     <div className="workspace">
-      <header className="topbar"><div className="mobile-brand"><span className="brand-mark"><Icon name="spark" size={17}/></span><strong>Influence</strong></div><div className="breadcrumb"><span>Workspace</span><Icon name="chevron" size={13}/><strong>{currentLabel}</strong></div><button className="search-command" onClick={() => setCommandOpen(true)}><Icon name="search" size={17}/><span>Search creators, campaigns…</span><kbd>⌘ K</kbd></button><div className="top-actions"><button className="icon-button notification" aria-label="Notifications" onClick={() => setNotificationsOpen(current => !current)}><Icon name="bell" size={18}/>{unreadCount > 0 && <i/>}</button><button className="help-button" onClick={() => notify("Pitch tip: run AI Match → inspect Riya → draft a message → open Analytics.")}>?</button><button className={`top-profile ${view === "profile" ? "active" : ""}`} aria-label="Open profile" onClick={() => navigate("profile")}>{userInitials}</button></div></header>
+      <header className="topbar"><div className="mobile-brand"><span className="brand-mark"><Icon name="spark" size={17}/></span><strong>Influence</strong></div><div className="breadcrumb"><span>Workspace</span><Icon name="chevron" size={13}/><strong>{currentLabel}</strong></div><button className="search-command" onClick={() => setCommandOpen(true)}><Icon name="search" size={17}/><span>Search creators, campaigns…</span><kbd>⌘ K</kbd></button><div className="top-actions"><button className="icon-button notification" aria-label="Notifications" onClick={() => setNotificationsOpen(current => !current)}><Icon name="bell" size={18}/>{unreadCount > 0 && <i/>}</button><button className="help-button" onClick={() => notify("Pitch tip: run AI Match → inspect a creator → draft a message → open Analytics.")}>?</button><button className={`top-profile ${view === "profile" ? "active" : ""}`} aria-label="Open profile" onClick={() => navigate("profile")}>{userInitials}</button></div></header>
       <div className="page-content">
         {view === "overview" && <Overview onNewCampaign={() => setMatcherOpen(true)} onSelectCreator={setSelectedCreator} onNavigate={navigate} userName={session.name} campaigns={campaigns} outreachCount={threads.length}/>} 
         {view === "discover" && <Discover onSelectCreator={setSelectedCreator} favorites={favorites} toggleFavorite={toggleFavorite} search={search} onSearch={setSearch}/>} 
         {view === "campaigns" && <Campaigns onNewCampaign={() => setMatcherOpen(true)} campaigns={campaigns} onOpenCampaign={setSelectedCampaign}/>} 
-        {view === "inbox" && <Inbox key={chatTarget ?? "inbox"} threads={threads} activeThreadId={chatTarget} currentUser={session} onSend={sendMessage} onReceive={receiveMessages} onMarkRead={markRead} onViewCreator={creatorId => { const creator = creators.find(item => item.id === creatorId); if (creator) setSelectedCreator(creator); }}/>} 
+        {view === "inbox" && <Inbox threads={threads} currentUser={session} onSend={sendMessage} onReceive={receiveMessages} onMarkRead={markRead}/>} 
         {view === "analytics" && <Analytics campaigns={campaigns}/>} 
         {view === "profile" && <ProfilePage session={session} campaigns={campaigns} threads={threads} favorites={favorites} onSave={notify} onSignOut={logout}/>} 
       </div>

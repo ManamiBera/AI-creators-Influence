@@ -271,3 +271,102 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto!important; animation-duration: .01ms!important; animation-iteration-count: 1!important; transition-duration: .01ms!important; }
 }
+/* Real registered-user Inbox */
+
+.user-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 9px;
+  color: var(--muted);
+}
+
+.user-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 8px;
+}
+
+.user-directory-empty,
+.conversation-empty,
+.no-user-selected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  color: var(--muted);
+}
+
+.user-directory-empty {
+  gap: 5px;
+  padding: 36px 12px;
+}
+
+.user-directory-empty strong,
+.conversation-empty strong,
+.no-user-selected strong {
+  color: var(--text);
+  font-size: 10px;
+}
+
+.user-directory-empty span,
+.conversation-empty span,
+.no-user-selected span {
+  max-width: 280px;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.messages-stage {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.conversation-empty {
+  gap: 7px;
+  margin: auto;
+  padding: 30px;
+}
+
+.no-user-selected {
+  gap: 8px;
+  min-height: 590px;
+}
+
+.message-compose > button.send-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: var(--lime);
+  color: #11150b;
+}
+
+@media (max-width: 650px) {
+  .inbox-shell {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .thread-list {
+    max-height: 230px;
+    overflow-y: auto;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .inbox-shell .conversation {
+    display: flex;
+    min-height: 520px;
+  }
+}
