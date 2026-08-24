@@ -370,3 +370,38 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     min-height: 520px;
   }
 }
+/* Dynamic Supabase workspace */
+
+.dynamic-empty {
+  display: flex;
+  min-height: 170px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  padding: 25px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.dynamic-empty strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.dynamic-empty span {
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.user-account-card .creator-card-top {
+  align-items: flex-start;
+}
+
+.user-account-card .profile-verified {
+  margin-top: 0;
+}
+
+.user-account-card .creator-title {
+  margin-top: 17px;
+}

@@ -24,9 +24,7 @@ const providers = [
     async authorize(credentials) {
       const email = String(credentials?.email ?? "").trim().toLowerCase();
       const password = String(credentials?.password ?? "");
-      if (email === "demo@influence.ai" && password === "demo123") {
-        return { id: "demo-user", name: "Manami Bera", email };
-      }
+      
       if (!supabaseUrl || !supabaseKey) return null;
       const supabase = createClient(supabaseUrl, supabaseKey, {
         auth: { autoRefreshToken: false, persistSession: false },
