@@ -2,7 +2,7 @@
 
 Creators Influence is a full-stack campaign collaboration workspace built with Next.js, Supabase, and Vercel. Registered users can discover one another, communicate inside the app, create shared campaigns, assign or remove team members, and track campaign progress.
 
-**Live app:** [https://ai-creators-influence.vercel.app](https://creators-influence.vercel.app/)
+**Live app:** https://creators-influence.vercel.app
 
 ## Features
 
@@ -131,4 +131,4 @@ A successful build includes these dynamic routes:
 
 ## Production URL
 
-[https://ai-creators-influence.vercel.app](https://creators-influence.vercel.app/)
+https://creators-influence.vercel.app
