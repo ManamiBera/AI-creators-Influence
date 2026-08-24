@@ -429,7 +429,6 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
   return <>
     <section className="page-heading">
       <div>
-        <div className="live-label"><span/> Live workspace · updates instantly</div>
         <h1>Good morning, {userName.split(" ")[0]}.</h1>
         <p>Here’s the signal behind your creator campaigns.</p>
       </div>
