@@ -239,11 +239,11 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: UserSession) 
         <p>Discover credible creators, predict campaign fit, and prove the business impact of every collaboration.</p>
       </div>
       <div className="auth-signal" aria-hidden="true"><span/><span/><span/><i/><i/></div>
-      <p className="auth-caption"><Icon name="shield" size={14}/> Explainable AI · Audience fraud detection · Outcome attribution</p>
+      <p className="auth-caption"><Icon name="shield" size={14}/> Audience fraud detection · Outcome attribution</p>
     </section>
     <section className="auth-panel">
       <div className="auth-card">
-        <div className="auth-mobile-logo"><span className="brand-mark"><Icon name="spark" size={18}/></span><strong>Influence AI</strong></div>
+        <div className="auth-mobile-logo"><span className="brand-mark"><Icon name="spark" size={18}/></span><strong>Creators Influence</strong></div>
         <span className="eyebrow">Secure brand workspace</span>
         <h2>{mode === "signin" ? "Welcome back." : "Create your account."}</h2>
         <p>{mode === "signin" ? "Sign in to continue to creator intelligence." : "Use your work email to join the Influence workspace."}</p>
