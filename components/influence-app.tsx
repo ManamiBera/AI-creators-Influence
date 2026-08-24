@@ -376,7 +376,7 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
             <div className="creator-metric"><span>Engagement</span><strong>{creator.engagement}</strong></div>
             <MatchPill score={creator.match}/>
             <Icon name="chevron" size={18}/>
-          </button>)}
+          </button>
         </div>
       </article>
 
