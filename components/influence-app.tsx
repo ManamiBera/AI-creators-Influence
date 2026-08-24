@@ -27,27 +27,6 @@ type IconName =
   | "target"
   | "play";
 
-type Creator = {
-  id: string;
-  name: string;
-  handle: string;
-  initials: string;
-  niche: string;
-  location: string;
-  followers: string;
-  engagement: string;
-  match: number;
-  cost: string;
-  tone: string;
-  audience: string;
-  authenticity: number;
-  relevance: number;
-  conversion: number;
-  color: string;
-  verified?: boolean;
-  flagged?: boolean;
-};
-
 type UserSession = {
   name: string;
   email: string;
@@ -99,121 +78,6 @@ const storageKeys = {
 function userStorageKey(key: string, email: string) {
   return `${key}:${email.trim().toLowerCase()}`;
 }
-
-const creators: Creator[] = [
-  {
-    id: "riya",
-    name: "Riya Ray",
-    handle: "@riyaglowdiary",
-    initials: "RR",
-    niche: "Skincare",
-    location: "Mumbai",
-    followers: "218K",
-    engagement: "5.6%",
-    match: 96,
-    cost: "₹85K",
-    tone: "Ingredient-first, credible, calm",
-    audience: "Women 18–30 · Metro India",
-    authenticity: 98,
-    relevance: 96,
-    conversion: 91,
-    color: "coral",
-    verified: true,
-  },
-  {
-    id: "prisha",
-    name: "Prisha Sen",
-    handle: "@codewithprisha",
-    initials: "PS",
-    niche: "Tech",
-    location: "Bengaluru",
-    followers: "72K",
-    engagement: "7.3%",
-    match: 93,
-    cost: "₹68K",
-    tone: "Practical, crisp, trustworthy",
-    audience: "Builders 20–34 · Tier 1",
-    authenticity: 97,
-    relevance: 94,
-    conversion: 88,
-    color: "violet",
-    verified: true,
-  },
-  {
-    id: "sana",
-    name: "Sana Kapoor",
-    handle: "@sipwithsana",
-    initials: "SK",
-    niche: "Food",
-    location: "Ahmedabad",
-    followers: "98K",
-    engagement: "6.7%",
-    match: 91,
-    cost: "₹72K",
-    tone: "Warm, visual, story-led",
-    audience: "Foodies 18–35 · West India",
-    authenticity: 96,
-    relevance: 91,
-    conversion: 87,
-    color: "amber",
-  },
-  {
-    id: "arjun",
-    name: "Arjun Veer",
-    handle: "@coacharjunfit",
-    initials: "AV",
-    niche: "Fitness",
-    location: "Gurugram",
-    followers: "412K",
-    engagement: "4.9%",
-    match: 89,
-    cost: "₹1.3L",
-    tone: "Energetic, direct, challenge-led",
-    audience: "Young professionals 21–35",
-    authenticity: 94,
-    relevance: 90,
-    conversion: 85,
-    color: "cyan",
-    verified: true,
-  },
-  {
-    id: "naina",
-    name: "Naina Bhat",
-    handle: "@techwithnaina",
-    initials: "NB",
-    niche: "Tech",
-    location: "Hyderabad",
-    followers: "165K",
-    engagement: "4.2%",
-    match: 87,
-    cost: "₹98K",
-    tone: "Explanatory, honest, polished",
-    audience: "Tech buyers 22–38 · Metro India",
-    authenticity: 93,
-    relevance: 89,
-    conversion: 82,
-    color: "blue",
-  },
-  {
-    id: "ishita",
-    name: "Ishita Kohli",
-    handle: "@glowbyishita",
-    initials: "IK",
-    niche: "Skincare",
-    location: "Delhi",
-    followers: "680K",
-    engagement: "1.1%",
-    match: 61,
-    cost: "₹1.75L",
-    tone: "Trend-led, aspirational",
-    audience: "Beauty followers 16–28",
-    authenticity: 48,
-    relevance: 82,
-    conversion: 54,
-    color: "pink",
-    flagged: true,
-  },
-];
 
 const navItems: { id: View; label: string; icon: IconName }[] = [
   { id: "overview", label: "Overview", icon: "grid" },
@@ -306,10 +170,6 @@ function Avatar({ creator, small = false }: { creator: { initials: string; color
   return <div className={`avatar avatar-${creator.color} ${small ? "avatar-small" : ""}`}>{creator.initials}</div>;
 }
 
-function MatchPill({ score }: { score: number }) {
-  return <span className={`match-pill ${score < 70 ? "match-low" : ""}`}><Icon name="spark" size={13}/>{score}% match</span>;
-}
-
 function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: UserSession) => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
@@ -350,7 +210,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: UserSession) 
         redirect: false,
       });
       if (!result?.ok) {
-        setError(mode === "signup" ? "Account created, but sign-in failed. Try signing in." : "Incorrect email or password. Try again or use the demo account.");
+        setError(mode === "signup" ? "Account created, but sign-in failed. Try signing in." : "Incorrect email or password. Try again.");
         return;
       }
       const authSession = await getSession();
@@ -401,169 +261,6 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: UserSession) 
   </main>;
 }
 
-function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campaigns, outreachCount }: {
-  onNewCampaign: () => void;
-  onSelectCreator: (creator: Creator) => void;
-  onNavigate: (view: View) => void;
-  userName: string;
-  campaigns: Campaign[];
-  outreachCount: number;
-}) {
-  const [range, setRange] = useState<"30d" | "6m" | "12m">("6m");
-  const metrics = useMemo(() => workspaceMetrics(campaigns), [campaigns]);
-  const activeCampaigns = campaigns.filter(campaign => campaign.status !== "Complete");
-  const featuredCampaign = activeCampaigns[0] ?? campaigns[0];
-  const rangeData = {
-    "30d": { multiplier: .24, change: 8.6, labels: ["W1", "W2", "W3", "W4"], path: "M0 188 C145 176 205 132 300 148 C410 166 505 70 760 58" },
-    "6m": { multiplier: 1, change: 24.8, labels: ["Mar", "Apr", "May", "Jun", "Jul", "Aug"], path: "M0 182 C70 172 94 145 153 151 C220 158 228 110 305 126 C375 141 396 84 458 96 C520 109 555 55 610 68 C670 82 700 28 760 40" },
-    "12m": { multiplier: 1.82, change: 41.3, labels: ["Sep", "Nov", "Jan", "Mar", "May", "Aug"], path: "M0 201 C85 192 115 170 175 178 C245 188 280 130 360 142 C440 154 476 95 560 110 C640 123 690 50 760 40" },
-  }[range];
-  const chartValue = metrics.earnedMedia * rangeData.multiplier;
-  const stats = [
-    { label: "Active campaigns", value: String(activeCampaigns.length).padStart(2, "0"), change: `${campaigns.length} total campaigns`, icon: "megaphone" as IconName, tone: "violet" },
-    { label: "Workspace users", value: String(outreachCount + 1).padStart(2, "0"), change: "Registered accounts", icon: "users" as IconName, tone: "cyan" },
-    { label: "Earned media value", value: formatLakhs(metrics.earnedMedia), change: `${Math.round(metrics.averageProgress)}% average delivery`, icon: "chart" as IconName, tone: "lime" },
-    { label: "Average ROAS", value: `${metrics.roas.toFixed(1)}×`, change: `${formatLakhs(metrics.budget)} managed budget`, icon: "bolt" as IconName, tone: "coral" },
-  ];
-
-  return <>
-    <section className="page-heading">
-      <div>
-        <div className="live-label"><span/> Live workspace · updates instantly</div>
-        <h1>Good morning, {userName.split(" ")[0]}.</h1>
-        <p>Here’s the signal behind your creator campaigns.</p>
-      </div>
-      <button className="primary-button" onClick={onNewCampaign}><Icon name="spark" size={17}/>New AI match</button>
-    </section>
-
-    <section className="stat-grid">
-      {stats.map((stat) => <article className="stat-card" key={stat.label}>
-        <div className={`stat-icon tone-${stat.tone}`}><Icon name={stat.icon}/></div>
-        <div className="stat-copy"><p>{stat.label}</p><strong>{stat.value}</strong><span>{stat.change}</span></div>
-      </article>)}
-    </section>
-
-    <section className="overview-grid">
-      <article className="panel performance-card">
-        <div className="panel-head">
-          <div><span className="eyebrow">Performance pulse</span><h2>Campaign impact</h2></div>
-          <select aria-label="Chart time range" value={range} onChange={event => setRange(event.target.value as "30d" | "6m" | "12m")}><option value="30d">Last 30 days</option><option value="6m">Last 6 months</option><option value="12m">Last 12 months</option></select>
-        </div>
-        <div className="chart-summary"><strong>{formatLakhs(chartValue)}</strong><span><b>↑ {rangeData.change}%</b> earned media value</span></div>
-        <div className="area-chart" aria-label="Earned media value chart rising from March to August">
-          <svg viewBox="0 0 760 230" preserveAspectRatio="none" role="img">
-            <defs>
-              <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d8ff61" stopOpacity=".28"/><stop offset="1" stopColor="#d8ff61" stopOpacity="0"/></linearGradient>
-            </defs>
-            <g className="grid-lines"><path d="M0 30H760M0 85H760M0 140H760M0 195H760"/></g>
-            <path className="chart-fill" d={`${rangeData.path} L760 230 L0 230 Z`}/>
-            <path className="chart-line" d={rangeData.path}/>
-          </svg>
-          <div className="chart-labels">{rangeData.labels.map(label => <span key={label}>{label}</span>)}</div>
-        </div>
-      </article>
-
-      <article className="panel campaign-pulse">
-        <div className="panel-head"><div><span className="eyebrow">Active campaign</span><h2>{featuredCampaign?.name ?? "Create your first campaign"}</h2></div>{featuredCampaign && <span className="status-live"><i/>{featuredCampaign.status}</span>}</div>
-        <div className="campaign-brand"><div className="brand-orb">{featuredCampaign ? initialsFor(featuredCampaign.brand) : "IA"}</div><div><strong>{featuredCampaign?.brand ?? "Influence AI"}</strong><span>{featuredCampaign ? `${featuredCampaign.category} · Live workspace` : "Ready for a campaign brief"}</span></div></div>
-        <div className="progress-wrap">
-          <div className="progress-ring" style={{ background: `conic-gradient(var(--lime) 0 ${featuredCampaign?.progress ?? 0}%, #252b36 ${featuredCampaign?.progress ?? 0}% 100%)` }}><div><strong>{featuredCampaign?.progress ?? 0}%</strong><span>complete</span></div></div>
-          <div className="progress-stats">
-            <p><span>Budget used</span><strong>{featuredCampaign ? `${formatLakhs(budgetInLakhs(featuredCampaign.budget) * featuredCampaign.progress / 100)} / ${featuredCampaign.budget}` : "₹0 / ₹0"}</strong></p>
-            <p><span>Creators live</span><strong>{featuredCampaign ? `${Math.max(1, Math.round(featuredCampaign.creators * featuredCampaign.progress / 100))} / ${featuredCampaign.creators}` : "0 / 0"}</strong></p>
-            <p><span>Projected reach</span><strong>{featuredCampaign?.reach ?? "—"}</strong></p>
-          </div>
-        </div>
-        <button className="secondary-button wide" onClick={() => onNavigate("campaigns")}>Open campaign <Icon name="arrow" size={16}/></button>
-      </article>
-    </section>
-
-    <section className="lower-grid">
-      <article className="panel shortlist-panel">
-        <div className="panel-head">
-          <div><span className="eyebrow">AI shortlist</span><h2>Best-fit creators</h2></div>
-          <button className="text-button" onClick={() => onNavigate("discover")}>View all <Icon name="arrow" size={15}/></button>
-        </div>
-        <div className="creator-list">
-          {creators.slice(0, 4).map((creator) => <button className="creator-row" key={creator.id} onClick={() => onSelectCreator(creator)}>
-            <Avatar creator={creator}/>
-            <div className="creator-main"><strong>{creator.name}{creator.verified && <span className="verify"><Icon name="check" size={10}/></span>}</strong><span>{creator.handle} · {creator.niche}</span></div>
-            <div className="creator-metric"><span>Engagement</span><strong>{creator.engagement}</strong></div>
-            <MatchPill score={creator.match}/>
-            <Icon name="chevron" size={18}/>
-          </button>)}
-        </div>
-      </article>
-
-      <article className="panel insight-panel">
-        <div className="insight-glow"/>
-        <div className="insight-icon"><Icon name="spark"/></div>
-        <span className="eyebrow">Influence AI</span>
-        <h2>One useful signal.</h2>
-        <p>Micro-creators in your skincare cohort are producing <strong>2.4× higher saves</strong> at 38% lower cost than macro accounts.</p>
-        <div className="insight-proof"><Icon name="shield" size={18}/><span>Based on 14,280 verified posts</span></div>
-        <button className="inverse-button" onClick={() => onNavigate("analytics")}>See the evidence <Icon name="arrow" size={15}/></button>
-      </article>
-    </section>
-  </>;
-}
-
-function Discover({ onSelectCreator, favorites, toggleFavorite, search, onSearch }: {
-  onSelectCreator: (creator: Creator) => void;
-  favorites: string[];
-  toggleFavorite: (id: string) => void;
-  search: string;
-  onSearch: (value: string) => void;
-}) {
-  const [filter, setFilter] = useState("All");
-  const [highConfidenceOnly, setHighConfidenceOnly] = useState(false);
-  const filtered = useMemo(() => creators.filter((creator) =>
-    (filter === "All" || creator.niche === filter) &&
-    (!highConfidenceOnly || creator.match >= 90) &&
-    `${creator.name} ${creator.handle} ${creator.niche}`.toLowerCase().includes(search.toLowerCase())
-  ), [filter, highConfidenceOnly, search]);
-  return <>
-    <section className="page-heading compact-heading">
-      <div><span className="eyebrow">Creator graph</span><h1>Discover real influence.</h1><p>Ranked by audience truth, relevance, and predicted conversion—not vanity metrics.</p></div>
-      <div className="trust-badge"><Icon name="shield" size={18}/><span><strong>12,480</strong> verified creators</span></div>
-    </section>
-    <label className="directory-search"><Icon name="search" size={17}/><input value={search} onChange={event => onSearch(event.target.value)} placeholder="Search by creator, handle, or niche…"/><span>{filtered.length} results</span></label>
-    <div className="filter-row">
-      <div className="filter-chips">{["All", "Skincare", "Tech", "Food", "Fitness"].map(item => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item}</button>)}</div>
-      <button className={`secondary-button ${highConfidenceOnly ? "filter-active" : ""}`} onClick={() => setHighConfidenceOnly(current => !current)}><Icon name="target" size={16}/>{highConfidenceOnly ? "90%+ match only" : "High-confidence only"}</button>
-    </div>
-    <section className="creator-grid">
-      {filtered.map((creator) => <article className="creator-card" key={creator.id}>
-        <div className="creator-card-top">
-          <Avatar creator={creator}/>
-          <button className={`icon-button ${favorites.includes(creator.id) ? "is-favorite" : ""}`} aria-label={`Favorite ${creator.name}`} onClick={() => toggleFavorite(creator.id)}><Icon name="heart" size={17}/></button>
-        </div>
-        <div className="creator-title"><div><h3>{creator.name}{creator.verified && <span className="verify"><Icon name="check" size={10}/></span>}</h3><p>{creator.handle} · {creator.location}</p></div><MatchPill score={creator.match}/></div>
-        <div className="tag-line"><span>{creator.niche}</span><span>Authentic audience</span></div>
-        <div className="creator-stats"><div><span>Followers</span><strong>{creator.followers}</strong></div><div><span>Engagement</span><strong>{creator.engagement}</strong></div><div><span>Est. fee</span><strong>{creator.cost}</strong></div></div>
-        {creator.flagged && <div className="risk-note"><Icon name="shield" size={15}/>Engagement anomaly detected</div>}
-        <button className="card-action" onClick={() => onSelectCreator(creator)}>View intelligence <Icon name="arrow" size={15}/></button>
-      </article>)}
-    </section>
-    {!filtered.length && <section className="panel empty-state"><Icon name="search" size={24}/><h2>No creators found</h2><p>Try a different name, niche, or confidence filter.</p><button className="secondary-button" onClick={() => { onSearch(""); setFilter("All"); setHighConfidenceOnly(false); }}>Clear filters</button></section>}
-  </>;
-}
-
-function Campaigns({ onNewCampaign, campaigns, onOpenCampaign }: { onNewCampaign: () => void; campaigns: Campaign[]; onOpenCampaign: (campaign: Campaign) => void }) {
-  return <>
-    <section className="page-heading compact-heading"><div><span className="eyebrow">Campaign command</span><h1>From brief to business impact.</h1><p>Every creator, deliverable, payment, and outcome in one view.</p></div><button className="primary-button" onClick={onNewCampaign}><Icon name="plus" size={17}/>Create campaign</button></section>
-    <section className="campaign-grid">
-      {campaigns.map((campaign) => <article className="campaign-card" key={campaign.id}>
-        <div className="campaign-card-head"><div className="campaign-mark" style={{ background: campaign.color }}>{campaign.brand.split(" ").map(x => x[0]).join("")}</div><span className={`campaign-status status-${campaign.status.toLowerCase()}`}><i/>{campaign.status}</span></div>
-        <span className="eyebrow">{campaign.brand} · {campaign.category}</span><h2>{campaign.name}</h2>
-        <div className="campaign-progress"><div><span>Progress</span><strong>{campaign.progress}%</strong></div><div className="progress-bar"><i style={{ width: `${campaign.progress}%`, background: campaign.color }}/></div></div>
-        <div className="campaign-numbers"><div><Icon name="wallet" size={16}/><span>Budget</span><strong>{campaign.budget}</strong></div><div><Icon name="users" size={16}/><span>Creators</span><strong>{campaign.creators}</strong></div><div><Icon name="target" size={16}/><span>Reach</span><strong>{campaign.reach}</strong></div></div>
-        <button className="card-action" onClick={() => onOpenCampaign(campaign)}>Open workspace <Icon name="arrow" size={15}/></button>
-      </article>)}
-    </section>
-  </>;
-}
-
 function LiveOverview({ userName, campaigns, users, onNewCampaign, onNavigate, onMessageUser }: { userName: string; campaigns: Campaign[]; users: Thread[]; onNewCampaign: () => void; onNavigate: (view: View) => void; onMessageUser: (user: Thread) => void }) {
   const activeCampaigns = campaigns.filter(campaign => campaign.status !== "Complete");
   const assignedUsers = new Set(campaigns.flatMap(campaign => campaignCreatorIds(campaign))).size;
@@ -575,7 +272,7 @@ function LiveOverview({ userName, campaigns, users, onNewCampaign, onNavigate, o
     { label: "Average progress", value: `${averageProgress}%`, change: "Calculated from live campaigns", icon: "chart" as IconName, tone: "coral" },
   ];
   return <>
-    <section className="page-heading"><div><div className="live-label"><span/> Live Supabase workspace</div><h1>Good morning, {userName.split(" ")[0]}.</h1><p>Everything below is calculated from registered users and campaigns your team created.</p></div><button className="primary-button" onClick={onNewCampaign}><Icon name="plus" size={17}/>Create campaign</button></section>
+    <section className="page-heading"><div><h1>Good morning, {userName.split(" ")[0]}.</h1><p>Everything below is calculated from registered users and campaigns your team created.</p></div><button className="primary-button" onClick={onNewCampaign}><Icon name="plus" size={17}/>Create campaign</button></section>
     <section className="stat-grid">{stats.map(stat => <article className="stat-card" key={stat.label}><div className={`stat-icon tone-${stat.tone}`}><Icon name={stat.icon}/></div><div className="stat-copy"><p>{stat.label}</p><strong>{stat.value}</strong><span>{stat.change}</span></div></article>)}</section>
     <section className="lower-grid">
       <article className="panel shortlist-panel"><div className="panel-head"><div><span className="eyebrow">Latest activity</span><h2>Real campaigns</h2></div><button className="text-button" onClick={() => onNavigate("campaigns")}>View all <Icon name="arrow" size={15}/></button></div><div className="creator-list">{campaigns.slice(0, 4).map(campaign => <button className="creator-row" key={campaign.id} onClick={() => onNavigate("campaigns")}><div className="campaign-mark" style={{background:campaign.color}}>{initialsFor(campaign.brand)}</div><div className="creator-main"><strong>{campaign.name}</strong><span>{campaign.brand} · {campaign.category}</span></div><div className="creator-metric"><span>Members</span><strong>{campaign.creators}</strong></div><span className={`campaign-status status-${campaign.status.toLowerCase()}`}><i/>{campaign.status}</span><Icon name="chevron" size={18}/></button>)}{!campaigns.length && <div className="dynamic-empty"><Icon name="megaphone" size={25}/><strong>No campaigns yet</strong><span>Create the first campaign—nothing is pre-filled.</span></div>}</div></article>
@@ -680,7 +377,7 @@ function Inbox({ threads, currentUser, onSend, onReceive, onMarkRead, activeThre
   </>;
 }
 
-function Analytics({ campaigns }: { campaigns: Campaign[] }) {
+function Analytics({ campaigns, userCount }: { campaigns: Campaign[]; userCount: number }) {
   const [rangeIndex, setRangeIndex] = useState(1);
   const metrics = useMemo(() => workspaceMetrics(campaigns), [campaigns]);
   const ranges = [
@@ -690,7 +387,7 @@ function Analytics({ campaigns }: { campaigns: Campaign[] }) {
   ];
   const range = ranges[rangeIndex];
   const revenue = metrics.earnedMedia * 1.35 * range.multiplier;
-  const averageAuthenticity = creators.reduce((sum, creator) => sum + creator.authenticity, 0) / creators.length;
+  const averageAuthenticity = 92;
   const qualified = Math.round(Math.min(96, averageAuthenticity + metrics.averageProgress * .05));
   const highIntent = Math.round(qualified * .71);
   const relevant = qualified - highIntent;
@@ -705,7 +402,7 @@ function Analytics({ campaigns }: { campaigns: Campaign[] }) {
   const uplift = Math.round(8 + metrics.averageProgress * .14);
   return <>
     <section className="page-heading compact-heading"><div><span className="eyebrow">Decision intelligence</span><h1>Prove what influenced growth.</h1><p>Metrics recalculate from campaign delivery, budget, and audience quality.</p></div><button className="secondary-button" onClick={() => setRangeIndex(current => (current + 1) % ranges.length)} aria-label="Change analytics date range"><Icon name="calendar" size={16}/>{range.label}</button></section>
-    <section className="analytics-summary"><article><span>Creator-attributed revenue</span><strong>{formatLakhs(revenue)}</strong><small>↑ {range.change}%</small></article><article><span>Cost per engagement</span><strong>₹{cpe.toFixed(2)}</strong><small>↓ {(metrics.averageProgress * .22).toFixed(1)}%</small></article><article><span>Qualified audience</span><strong>{qualified}%</strong><small>{creators.length} profiles verified</small></article></section>
+    <section className="analytics-summary"><article><span>Creator-attributed revenue</span><strong>{formatLakhs(revenue)}</strong><small>↑ {range.change}%</small></article><article><span>Cost per engagement</span><strong>₹{cpe.toFixed(2)}</strong><small>↓ {(metrics.averageProgress * .22).toFixed(1)}%</small></article><article><span>Qualified audience</span><strong>{qualified}%</strong><small>{userCount} registered profiles</small></article></section>
     <section className="analytics-grid">
       <article className="panel channel-chart"><div className="panel-head"><div><span className="eyebrow">Attribution</span><h2>Revenue by channel</h2></div></div><div className="bar-chart">
         {channels.map(row => <div className="bar-row" key={row.n}><span>{row.n}</span><div><i style={{width:`${Math.round(row.share / channels[0].share * 100)}%`,background:row.c}}/></div><strong>{formatLakhs(revenue * row.share)}</strong></div>)}
@@ -772,33 +469,6 @@ function ProfilePage({ session, campaigns, threads, onSave, onSignOut }: { sessi
   </>;
 }
 
-function CreatorDrawer({ creator, campaigns, onClose, isFavorite, toggleFavorite, onSend, onToggleAssignment }: {
-  creator: Creator;
-  campaigns: Campaign[];
-  onClose: () => void;
-  isFavorite: boolean;
-  toggleFavorite: () => void;
-  onSend: (creator: Creator) => void;
-  onToggleAssignment: (campaignId: string, creatorId: string) => void;
-}) {
-  const [drafted, setDrafted] = useState(false);
-  const scores = [{name:"Audience authenticity",value:creator.authenticity},{name:"Brief relevance",value:creator.relevance},{name:"Conversion signal",value:creator.conversion}];
-  return <div className="drawer-layer" role="dialog" aria-modal="true" aria-label={`${creator.name} intelligence profile`}>
-    <button className="drawer-scrim" onClick={onClose} aria-label="Close creator profile"/>
-    <aside className="creator-drawer">
-      <div className="drawer-head"><span>Creator intelligence</span><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={18}/></button></div>
-      <div className="profile-hero"><Avatar creator={creator}/><div><h2>{creator.name}{creator.verified && <span className="verify"><Icon name="check" size={10}/></span>}</h2><p>{creator.handle} · {creator.location}</p></div><button className={`icon-button ${isFavorite ? "is-favorite" : ""}`} onClick={toggleFavorite}><Icon name="heart" size={18}/></button></div>
-      <div className="profile-match"><div><MatchPill score={creator.match}/><span>Recommended for Monsoon Reset</span></div><strong>{creator.cost}<small>estimated fee</small></strong></div>
-      {creator.flagged && <div className="warning-card"><Icon name="shield"/><div><strong>Audience anomaly detected</strong><span>Follower growth and engagement are inconsistent with peer benchmarks.</span></div></div>}
-      <div className="score-section"><span className="eyebrow">Why this match</span>{scores.map(score => <div className="score-row" key={score.name}><div><span>{score.name}</span><strong>{score.value}%</strong></div><div><i style={{width:`${score.value}%`}}/></div></div>)}</div>
-      <div className="profile-facts"><div><span>Followers</span><strong>{creator.followers}</strong></div><div><span>Engagement</span><strong>{creator.engagement}</strong></div><div><span>Primary niche</span><strong>{creator.niche}</strong></div><div><span>Audience</span><strong>{creator.audience}</strong></div></div>
-      <div className="tone-card"><span className="eyebrow">Content signature</span><p>{creator.tone}</p></div>
-      <div className="creator-assignment"><span className="eyebrow">Campaign assignments</span>{campaigns.filter(campaign => campaign.status !== "Complete").map(campaign => { const assigned = campaignCreatorIds(campaign).includes(creator.id); return <div key={campaign.id}><span><strong>{campaign.name}</strong><small>{campaign.brand}</small></span><button className={assigned ? "remove-assignment" : ""} onClick={() => onToggleAssignment(campaign.id, creator.id)}>{assigned ? "Remove" : "Assign"}</button></div>; })}</div>
-      {drafted ? <div className="draft-card"><div><span className="eyebrow">AI outreach draft</span><button onClick={() => setDrafted(false)}>Edit</button></div><p>Hi {creator.name.split(" ")[0]}, your {creator.niche.toLowerCase()} storytelling and strong audience trust make you a standout fit for Luma Skin’s Monsoon Reset. We’d love to collaborate on a creator-led launch…</p><button className="primary-button wide" onClick={() => onSend(creator)}><Icon name="message" size={16}/>Open in-app chat</button></div> : <button className="primary-button wide drawer-cta" onClick={() => setDrafted(true)}><Icon name="spark" size={17}/>Draft in-app message</button>}
-    </aside>
-  </div>;
-}
-
 function NewCampaignModal({ onClose, onComplete }: { onClose: () => void; onComplete: (campaign: Campaign) => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -843,94 +513,6 @@ function LiveCommandPalette({ onClose, onNavigate, onSelectUser, onSelectCampaig
   const hasResults = matchingViews.length + matchingUsers.length + matchingCampaigns.length > 0;
   return <div className="modal-layer command-layer" role="dialog" aria-modal="true" aria-label="Quick navigation"><button className="drawer-scrim" onClick={onClose} aria-label="Close"/><div className="command-palette"><div className="command-input"><Icon name="search"/><input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Search views, users, campaigns…"/><kbd>ESC</kbd></div>{matchingViews.length > 0 && <><span className="command-label">Jump to</span>{matchingViews.map(item => <button key={item.id} onClick={() => {onNavigate(item.id);onClose();}}><span><Icon name={item.icon}/>{item.label}</span><Icon name="arrow" size={15}/></button>)}</>}{matchingUsers.length > 0 && <><span className="command-label">Registered users</span>{matchingUsers.map(user => <button key={user.id} onClick={() => {onSelectUser(user);onClose();}}><span><Avatar creator={user} small/>{user.name} · {user.email}</span><Icon name="arrow" size={15}/></button>)}</>}{matchingCampaigns.length > 0 && <><span className="command-label">Campaigns</span>{matchingCampaigns.map(campaign => <button key={campaign.id} onClick={() => {onNavigate("campaigns");onSelectCampaign(campaign);onClose();}}><span><Icon name="megaphone" size={16}/>{campaign.name} · {campaign.brand}</span><Icon name="arrow" size={15}/></button>)}</>}{!hasResults && <div className="command-empty">No matching views, users, or campaigns.</div>}</div></div>;
 }
-
-function Matchmaker({ onClose, onComplete }: { onClose: () => void; onComplete: (campaign: Campaign) => void }) {
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState("");
-  const [name, setName] = useState("Monsoon Reset · Phase 2");
-  const [brand, setBrand] = useState("Luma Skin");
-  const [category, setCategory] = useState("Skincare");
-  const [budget, setBudget] = useState("₹1L – ₹3L");
-  const [objective, setObjective] = useState("Drive high-intent trials for a humidity-proof sunscreen among women 18–30 in metro India.");
-  const run = async () => {
-    setError("");
-    if (!name.trim() || !brand.trim() || !objective.trim()) {
-      setError("Campaign name, brand, and objective are required.");
-      return;
-    }
-    setRunning(true);
-    setProgress(18);
-    const steps = [43, 71, 100];
-    steps.forEach((value, index) => window.setTimeout(() => setProgress(value), 450 * (index + 1)));
-    try {
-      const [response] = await Promise.all([
-        fetch("/api/match", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), brand: brand.trim(), category, objective: objective.trim(), budget }),
-        }),
-        new Promise(resolve => window.setTimeout(resolve, 1500)),
-      ]);
-      const result = await response.json() as { campaign?: Campaign; error?: string };
-      if (!response.ok || !result.campaign) throw new Error(result.error ?? "Matching failed.");
-      setProgress(100);
-      window.setTimeout(() => onComplete(result.campaign as Campaign), 260);
-    } catch (matchError) {
-      setRunning(false);
-      setProgress(0);
-      setError(matchError instanceof Error ? matchError.message : "Matching failed. Please try again.");
-    }
-  };
-  return <div className="modal-layer" role="dialog" aria-modal="true" aria-label="Create an AI campaign match"><button className="drawer-scrim" onClick={onClose} aria-label="Close"/><div className="match-modal">
-    <div className="modal-head"><div className="modal-icon"><Icon name="spark"/></div><div><span className="eyebrow">Influence AI matchmaker</span><h2>Turn a brief into a shortlist.</h2></div><button className="icon-button" onClick={onClose}><Icon name="close" size={18}/></button></div>
-    {running ? <div className="matching-state"><div className="scan-orb"><Icon name="spark" size={28}/><i/></div><h3>Reading the signal…</h3><p>{progress < 43 ? "Understanding campaign intent" : progress < 71 ? "Verifying audience quality" : progress < 100 ? "Predicting creator fit" : "Shortlist ready"}</p><div className="scan-progress"><i style={{width:`${progress}%`}}/></div><span>{progress}% · scoring 12,480 creators</span></div> : <div className="brief-form">
-      <div className="form-grid"><label><span>Campaign name</span><input value={name} onChange={event => setName(event.target.value)}/></label><label><span>Brand</span><input value={brand} onChange={event => setBrand(event.target.value)}/></label></div>
-      <div className="form-grid"><label><span>Category</span><select value={category} onChange={event => setCategory(event.target.value)}><option>Skincare</option><option>Technology</option><option>Fitness</option><option>Food</option></select></label><label><span>Budget</span><select value={budget} onChange={event => setBudget(event.target.value)}><option>₹50K – ₹1L</option><option>₹1L – ₹3L</option><option>₹3L – ₹5L</option></select></label></div>
-      <label><span>What outcome matters?</span><textarea value={objective} onChange={event => setObjective(event.target.value)}/></label>
-      {error && <div className="auth-error"><Icon name="shield" size={15}/>{error}</div>}
-      <div className="ai-note"><Icon name="shield" size={17}/><span>Influence scores content fit, audience truth, predicted conversion, and budget efficiency.</span></div>
-      <button className="primary-button wide" onClick={run}><Icon name="spark" size={17}/>Find best-fit creators</button>
-    </div>}
-  </div></div>;
-}
-
-function CampaignWorkspace({ campaign, onClose, onAdvance, onToggleCreator, onMessageCreator }: { campaign: Campaign; onClose: () => void; onAdvance: (campaignId: string) => void; onToggleCreator: (campaignId: string, creatorId: string) => void; onMessageCreator: (creator: Creator) => void }) {
-  const assignedIds = campaignCreatorIds(campaign);
-  const assignedCreators = assignedIds.map(id => creators.find(creator => creator.id === id)).filter((creator): creator is Creator => Boolean(creator));
-  const availableCreators = creators.filter(creator => !assignedIds.includes(creator.id));
-  return <div className="modal-layer" role="dialog" aria-modal="true" aria-label={`${campaign.name} campaign workspace`}><button className="drawer-scrim" onClick={onClose} aria-label="Close"/><div className="campaign-modal">
-    <div className="modal-head"><div className="campaign-mark" style={{background: campaign.color}}>{campaign.brand.split(" ").map(part => part[0]).join("").slice(0,2)}</div><div><span className="eyebrow">Campaign workspace</span><h2>{campaign.name}</h2></div><button className="icon-button" onClick={onClose}><Icon name="close" size={18}/></button></div>
-    <div className="campaign-modal-summary"><div><span>Status</span><strong>{campaign.status}</strong></div><div><span>Budget</span><strong>{campaign.budget}</strong></div><div><span>Projected reach</span><strong>{campaign.reach}</strong></div></div>
-    <div className="campaign-objective"><span className="eyebrow">Campaign objective</span><p>{campaign.objective}</p></div>
-    <div className="campaign-progress modal-progress"><div><span>Delivery progress</span><strong>{campaign.progress}%</strong></div><div className="progress-bar"><i style={{width:`${campaign.progress}%`,background:campaign.color}}/></div></div>
-    <div className="campaign-work-grid"><div><div className="assignment-heading"><span className="eyebrow">Assigned creators · {assignedCreators.length}</span></div>{assignedCreators.length ? assignedCreators.map(creator => <div className="mini-creator creator-manage-row" key={creator.id}><Avatar creator={creator} small/><div><strong>{creator.name}</strong><span>{creator.niche} · {creator.match}% match</span></div><div><button aria-label={`Chat with ${creator.name}`} onClick={() => onMessageCreator(creator)}><Icon name="message" size={13}/></button><button className="remove-creator" aria-label={`Remove ${creator.name} from campaign`} onClick={() => onToggleCreator(campaign.id, creator.id)}><Icon name="close" size={13}/></button></div></div>) : <p className="assignment-empty">No creators assigned yet.</p>}<span className="eyebrow available-label">Available creators</span>{availableCreators.map(creator => <div className="mini-creator creator-manage-row" key={creator.id}><Avatar creator={creator} small/><div><strong>{creator.name}</strong><span>{creator.niche} · {creator.match}% match</span></div><button className="assign-creator" onClick={() => onToggleCreator(campaign.id, creator.id)}><Icon name="plus" size={13}/>Assign</button></div>)}</div><div><span className="eyebrow">Milestones</span>{["Brief approved","Creators shortlisted","Outreach active","Content live"].map((step,index) => { const done = campaign.progress >= [5,25,55,85][index]; return <div className={`milestone ${done ? "done" : ""}`} key={step}><span>{done ? <Icon name="check" size={12}/> : index + 1}</span><strong>{step}</strong></div>; })}</div></div>
-    <button className="primary-button wide" onClick={() => onAdvance(campaign.id)} disabled={campaign.progress >= 100}><Icon name={campaign.progress >= 100 ? "check" : "arrow"} size={16}/>{campaign.progress >= 100 ? "Campaign complete" : "Advance to next milestone"}</button>
-  </div></div>;
-}
-
-function CommandPalette({ onClose, onNavigate, onSelectCreator, onSelectCampaign, campaigns }: { onClose: () => void; onNavigate: (view: View) => void; onSelectCreator: (creator: Creator) => void; onSelectCampaign: (campaign: Campaign) => void; campaigns: Campaign[] }) {
-  const [query, setQuery] = useState("");
-  const normalized = query.trim().toLowerCase();
-  const matchingViews = navItems.filter(item => item.label.toLowerCase().includes(normalized));
-  const matchingCreators = creators.filter(creator => `${creator.name} ${creator.handle} ${creator.niche}`.toLowerCase().includes(normalized)).slice(0, normalized ? 4 : 2);
-  const matchingCampaigns = campaigns.filter(campaign => `${campaign.name} ${campaign.brand} ${campaign.category}`.toLowerCase().includes(normalized)).slice(0, normalized ? 4 : 2);
-  const hasResults = matchingViews.length + matchingCreators.length + matchingCampaigns.length > 0;
-  return <div className="modal-layer command-layer" role="dialog" aria-modal="true" aria-label="Quick navigation"><button className="drawer-scrim" onClick={onClose} aria-label="Close"/><div className="command-palette"><div className="command-input"><Icon name="search"/><input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Search views, creators, campaigns…"/><kbd>ESC</kbd></div>
-    {matchingViews.length > 0 && <><span className="command-label">Jump to</span>{matchingViews.map(item => <button key={item.id} onClick={() => {onNavigate(item.id);onClose();}}><span><Icon name={item.icon}/>{item.label}</span><Icon name="arrow" size={15}/></button>)}</>}
-    {matchingCreators.length > 0 && <><span className="command-label">Creators</span>{matchingCreators.map(creator => <button key={creator.id} onClick={() => { onNavigate("discover"); onSelectCreator(creator); onClose(); }}><span><Avatar creator={creator} small/>{creator.name} · {creator.niche}</span><Icon name="arrow" size={15}/></button>)}</>}
-    {matchingCampaigns.length > 0 && <><span className="command-label">Campaigns</span>{matchingCampaigns.map(campaign => <button key={campaign.id} onClick={() => { onNavigate("campaigns"); onSelectCampaign(campaign); onClose(); }}><span><Icon name="megaphone" size={16}/>{campaign.name} · {campaign.brand}</span><Icon name="arrow" size={15}/></button>)}</>}
-    {!hasResults && <div className="command-empty">No matching views, creators, or campaigns.</div>}
-  </div></div>;
-}
-
-void Overview;
-void Discover;
-void Campaigns;
-void CreatorDrawer;
-void Matchmaker;
-void CampaignWorkspace;
-void CommandPalette;
 
 export default function InfluenceApp() {
   const [authChecked, setAuthChecked] = useState(false);
@@ -1132,7 +714,7 @@ export default function InfluenceApp() {
         {view === "discover" && <UserDiscover users={threads} search={search} onSearch={setSearch} onMessage={openUserChat}/>} 
         {view === "campaigns" && <LiveCampaigns onNewCampaign={() => setMatcherOpen(true)} campaigns={campaigns} onOpenCampaign={setSelectedCampaign}/>} 
         {view === "inbox" && <Inbox key={chatTarget ?? "inbox"} activeThreadId={chatTarget} threads={threads} currentUser={session} onSend={sendMessage} onReceive={receiveMessages} onMarkRead={markRead}/>} 
-        {view === "analytics" && <Analytics campaigns={campaigns}/>} 
+        {view === "analytics" && <Analytics campaigns={campaigns} userCount={threads.length + 1}/>} 
         {view === "profile" && <ProfilePage session={session} campaigns={campaigns} threads={threads} onSave={notify} onSignOut={logout}/>} 
       </div>
     </div>
