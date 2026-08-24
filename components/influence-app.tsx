@@ -370,7 +370,7 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
           <button className="text-button" onClick={() => onNavigate("discover")}>View all <Icon name="arrow" size={15}/></button>
         </div>
         <div className="creator-list">
-          {creators.slice(0, 4).map((creator) => <button className="creator-row" key={creator.id} onClick={() => onSelectCreator(creator)}>
+          
             <Avatar creator={creator}/>
             <div className="creator-main"><strong>{creator.name}{creator.verified && <span className="verify"><Icon name="check" size={10}/></span>}</strong><span>{creator.handle} · {creator.niche}</span></div>
             <div className="creator-metric"><span>Engagement</span><strong>{creator.engagement}</strong></div>
