@@ -100,6 +100,120 @@ function userStorageKey(key: string, email: string) {
   return `${key}:${email.trim().toLowerCase()}`;
 }
 
+const creators: Creator[] = [
+  {
+    id: "riya",
+    name: "Riya Ray",
+    handle: "@riyaglowdiary",
+    initials: "RR",
+    niche: "Skincare",
+    location: "Mumbai",
+    followers: "218K",
+    engagement: "5.6%",
+    match: 96,
+    cost: "₹85K",
+    tone: "Ingredient-first, credible, calm",
+    audience: "Women 18–30 · Metro India",
+    authenticity: 98,
+    relevance: 96,
+    conversion: 91,
+    color: "coral",
+    verified: true,
+  },
+  {
+    id: "prisha",
+    name: "Prisha Sen",
+    handle: "@codewithprisha",
+    initials: "PS",
+    niche: "Tech",
+    location: "Bengaluru",
+    followers: "72K",
+    engagement: "7.3%",
+    match: 93,
+    cost: "₹68K",
+    tone: "Practical, crisp, trustworthy",
+    audience: "Builders 20–34 · Tier 1",
+    authenticity: 97,
+    relevance: 94,
+    conversion: 88,
+    color: "violet",
+    verified: true,
+  },
+  {
+    id: "sana",
+    name: "Sana Kapoor",
+    handle: "@sipwithsana",
+    initials: "SK",
+    niche: "Food",
+    location: "Ahmedabad",
+    followers: "98K",
+    engagement: "6.7%",
+    match: 91,
+    cost: "₹72K",
+    tone: "Warm, visual, story-led",
+    audience: "Foodies 18–35 · West India",
+    authenticity: 96,
+    relevance: 91,
+    conversion: 87,
+    color: "amber",
+  },
+  {
+    id: "arjun",
+    name: "Arjun Veer",
+    handle: "@coacharjunfit",
+    initials: "AV",
+    niche: "Fitness",
+    location: "Gurugram",
+    followers: "412K",
+    engagement: "4.9%",
+    match: 89,
+    cost: "₹1.3L",
+    tone: "Energetic, direct, challenge-led",
+    audience: "Young professionals 21–35",
+    authenticity: 94,
+    relevance: 90,
+    conversion: 85,
+    color: "cyan",
+    verified: true,
+  },
+  {
+    id: "naina",
+    name: "Naina Bhat",
+    handle: "@techwithnaina",
+    initials: "NB",
+    niche: "Tech",
+    location: "Hyderabad",
+    followers: "165K",
+    engagement: "4.2%",
+    match: 87,
+    cost: "₹98K",
+    tone: "Explanatory, honest, polished",
+    audience: "Tech buyers 22–38 · Metro India",
+    authenticity: 93,
+    relevance: 89,
+    conversion: 82,
+    color: "blue",
+  },
+  {
+    id: "ishita",
+    name: "Ishita Kohli",
+    handle: "@glowbyishita",
+    initials: "IK",
+    niche: "Skincare",
+    location: "Delhi",
+    followers: "680K",
+    engagement: "1.1%",
+    match: 61,
+    cost: "₹1.75L",
+    tone: "Trend-led, aspirational",
+    audience: "Beauty followers 16–28",
+    authenticity: 48,
+    relevance: 82,
+    conversion: 54,
+    color: "pink",
+    flagged: true,
+  },
+];
 
 const navItems: { id: View; label: string; icon: IconName }[] = [
   { id: "overview", label: "Overview", icon: "grid" },
@@ -315,6 +429,7 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
   return <>
     <section className="page-heading">
       <div>
+        <div className="live-label"><span/> Live workspace · updates instantly</div>
         <h1>Good morning, {userName.split(" ")[0]}.</h1>
         <p>Here’s the signal behind your creator campaigns.</p>
       </div>
@@ -370,13 +485,13 @@ function Overview({ onNewCampaign, onSelectCreator, onNavigate, userName, campai
           <button className="text-button" onClick={() => onNavigate("discover")}>View all <Icon name="arrow" size={15}/></button>
         </div>
         <div className="creator-list">
-          
+          {creators.slice(0, 4).map((creator) => <button className="creator-row" key={creator.id} onClick={() => onSelectCreator(creator)}>
             <Avatar creator={creator}/>
             <div className="creator-main"><strong>{creator.name}{creator.verified && <span className="verify"><Icon name="check" size={10}/></span>}</strong><span>{creator.handle} · {creator.niche}</span></div>
             <div className="creator-metric"><span>Engagement</span><strong>{creator.engagement}</strong></div>
             <MatchPill score={creator.match}/>
             <Icon name="chevron" size={18}/>
-          </button>
+          </button>)}
         </div>
       </article>
 
@@ -460,7 +575,7 @@ function LiveOverview({ userName, campaigns, users, onNewCampaign, onNavigate, o
     { label: "Average progress", value: `${averageProgress}%`, change: "Calculated from live campaigns", icon: "chart" as IconName, tone: "coral" },
   ];
   return <>
-    <section className="page-heading"><div><h1>Good morning, {userName.split(" ")[0]}.</h1><p>Everything below is calculated from registered users and campaigns your team created.</p></div><button className="primary-button" onClick={onNewCampaign}><Icon name="plus" size={17}/>Create campaign</button></section>
+    <section className="page-heading"><div><div className="live-label"><span/> Live Supabase workspace</div><h1>Good morning, {userName.split(" ")[0]}.</h1><p>Everything below is calculated from registered users and campaigns your team created.</p></div><button className="primary-button" onClick={onNewCampaign}><Icon name="plus" size={17}/>Create campaign</button></section>
     <section className="stat-grid">{stats.map(stat => <article className="stat-card" key={stat.label}><div className={`stat-icon tone-${stat.tone}`}><Icon name={stat.icon}/></div><div className="stat-copy"><p>{stat.label}</p><strong>{stat.value}</strong><span>{stat.change}</span></div></article>)}</section>
     <section className="lower-grid">
       <article className="panel shortlist-panel"><div className="panel-head"><div><span className="eyebrow">Latest activity</span><h2>Real campaigns</h2></div><button className="text-button" onClick={() => onNavigate("campaigns")}>View all <Icon name="arrow" size={15}/></button></div><div className="creator-list">{campaigns.slice(0, 4).map(campaign => <button className="creator-row" key={campaign.id} onClick={() => onNavigate("campaigns")}><div className="campaign-mark" style={{background:campaign.color}}>{initialsFor(campaign.brand)}</div><div className="creator-main"><strong>{campaign.name}</strong><span>{campaign.brand} · {campaign.category}</span></div><div className="creator-metric"><span>Members</span><strong>{campaign.creators}</strong></div><span className={`campaign-status status-${campaign.status.toLowerCase()}`}><i/>{campaign.status}</span><Icon name="chevron" size={18}/></button>)}{!campaigns.length && <div className="dynamic-empty"><Icon name="megaphone" size={25}/><strong>No campaigns yet</strong><span>Create the first campaign—nothing is pre-filled.</span></div>}</div></article>
