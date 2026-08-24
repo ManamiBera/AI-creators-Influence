@@ -232,7 +232,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: UserSession) 
 
   return <main className="auth-shell">
     <section className="auth-story">
-      <div className="brand auth-brand"><span className="brand-mark"><Icon name="spark" size={19}/></span><span>Influence<em>AI</em></span></div>
+      <div className="brand auth-brand"><span className="brand-mark"><Icon name="spark" size={19}/></span><span>Creators Influence</span></div>
       <div className="auth-story-copy">
         <span className="auth-kicker"><i/> Creator intelligence platform</span>
         <h1>Find the signal.<br/><em>Move culture.</em></h1>
@@ -695,12 +695,12 @@ export default function InfluenceApp() {
   const unreadCount = threads.filter(thread => thread.unread).length;
   const userInitials = session ? initialsFor(session.name) : "IA";
 
-  if (!authChecked) return <main className="auth-loading"><span className="brand-mark"><Icon name="spark" size={22}/></span><strong>Influence AI</strong><i/></main>;
+  if (!authChecked) return <main className="auth-loading"><span className="brand-mark"><Icon name="spark" size={22}/></span><strong>Creators Influence</strong><i/></main>;
   if (!session) return <AuthScreen onAuthenticated={user => { setSession(user); setAuthChecked(true); }}/>
 
   return <main className="app-shell">
     <aside className="sidebar">
-      <button className="brand" onClick={() => navigate("overview")}><span className="brand-mark"><Icon name="spark" size={19}/></span><span>Influence<em>AI</em></span></button>
+      <button className="brand" onClick={() => navigate("overview")}><span className="brand-mark"><Icon name="spark" size={19}/></span><span>Creators Influence</span></button>
       <nav aria-label="Primary navigation">{navItems.map(item => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => navigate(item.id)}><Icon name={item.icon}/><span>{item.label}</span>{item.id === "inbox" && unreadCount > 0 && <b>{unreadCount}</b>}</button>)}</nav>
       <div className="sidebar-spacer"/>
       <div className="demo-card"><span className="demo-icon"><Icon name="check" size={16}/></span><strong>Live workspace</strong><p>Users, campaigns, assignments, and messages are connected to Supabase.</p><span className="demo-status"><i/>Session active</span></div>

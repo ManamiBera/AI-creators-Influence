@@ -3,15 +3,15 @@ import "./globals.css";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  "https://influence-ai-creator-intelligence.vercel.app";
+  "https://creators-influence.vercel.app/";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Influence",
+  title: "Creators Influence",
   description:
     "AI-powered creator intelligence for finding credible partners, launching campaigns, and proving business impact.",
   openGraph: {
-    title: "Influence",
+    title: "Creators Influence",
     description:
       "Find the creators who move people—and prove the impact they create.",
     type: "website",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Influence",
+    title: "Creators Influence",
     description:
       "Find the creators who move people—and prove the impact they create.",
     images: ["/og.png"],
